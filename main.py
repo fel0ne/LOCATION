@@ -34,7 +34,7 @@ async def pushData(data: JSONData):
         f = open(LOG_FILE, 'w')
         print("The file is empty.")
 
-        f.write('['+dumps(data.dict()) + ']' + '\n')  #dict convert to словарь
+        f.write('['+dumps(data.model_dump()) + ']' + '\n')  #dict convert to словарь
         f.close()
     else:
         print("The file is not empty.")
@@ -43,7 +43,7 @@ async def pushData(data: JSONData):
         f.seek(f.tell() - 2)  # Назад на 2 символа
         # Обрезаем файл до текущей позиции
         f.truncate()
-        f.write('\n, ' + dumps(data.dict()) + ']' + '\n')  #dict convert to словарь
+        f.write('\n, ' + dumps(data.model_dump()) + ']' + '\n')  #dict convert to словарь
         f.close()
 
 
