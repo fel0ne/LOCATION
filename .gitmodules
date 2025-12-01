@@ -1,3 +1,4 @@
 [submodule "AndroidStuding"]
 	path = AndroidStuding
 	url = https://github.com/fel0ne/AndroidStuding.git
+	branch = main
