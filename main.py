@@ -249,6 +249,114 @@ async def get_raw_data():
         raise HTTPException(status_code=500, detail=f"Error reading data: {str(e)}")
 
 
+@app.get("/map")
+async def show_map():
+    """Показать все точки на карте OpenStreetMap с Leaflet"""
+    try:
+        data = read_all_data()
+
+        if not data:
+            return HTMLResponse("""
+            <html><body><h1>Нет данных для отображения</h1></body></html>
+            """)
+
+        # JS для маркеров
+        markers_js = ""
+        bounds_js = "var bounds = L.latLngBounds();\n"
+
+        provider_colors = {
+            'gps': 'red',
+            'network': 'blue',
+            'cell': 'green',
+            'wifi': 'orange',
+            'passive': 'purple'
+        }
+
+        for i, entry in enumerate(data):
+            lat = entry.get("latitude")
+            lon = entry.get("longitude")
+            accuracy = entry.get("accuracy")
+            provider = entry.get("provider")
+            source = entry.get("source")
+
+            color = provider_colors.get((provider or "").lower(), "gray")
+
+            markers_js += f"""
+                var marker{i} = L.marker([{lat}, {lon}], {{
+                    icon: L.AwesomeMarkers.icon({{
+                        icon: 'map-marker',
+                        prefix: 'fa',
+                        markerColor: '{color}'
+                    }})
+                }}).addTo(map);
+
+                marker{i}.bindPopup(`
+                    <div>
+                        <h3>Точка #{i+1}</h3>
+                        Координаты: <code>{lat}, {lon}</code><br>
+                        Точность: {accuracy} м<br>
+                        Провайдер: {provider}<br>
+                        Источник: {source}<br>
+                        <a href="https://www.openstreetmap.org/?mlat={lat}&mlon={lon}&zoom=17" target="_blank">
+                            Открыть в OSM
+                        </a>
+                    </div>
+                `);
+
+                bounds.extend([{lat}, {lon}]);
+            """
+
+        # Центр карты
+        first_lat = data[0].get("latitude")
+        first_lon = data[0].get("longitude")
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Карта</title>
+
+            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css">
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+
+            <style>
+                body, html {{
+                    margin: 0;
+                    padding: 0;
+                }}
+                #map {{
+                    height: 100vh;
+                    width: 100vw;
+                }}
+            </style>
+        </head>
+        <body>
+            <div id="map"></div>
+
+            <script>
+                var map = L.map('map').setView([{first_lat}, {first_lon}], 13);
+
+                L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
+                    maxZoom: 19
+                }}).addTo(map);
+
+                var bounds = L.latLngBounds();
+
+                {markers_js}
+
+                map.fitBounds(bounds);
+            </script>
+        </body>
+        </html>
+        """
+        return HTMLResponse(content=html_content)
+
+    except Exception as e:
+        return HTMLResponse(f"<h1>Ошибка: {e}</h1>", status_code=500)
 
 
 if __name__ == "__main__":
