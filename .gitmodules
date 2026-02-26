@@ -2,3 +2,6 @@
 	path = AndroidStuding
 	url = https://github.com/fel0ne/AndroidStuding.git
 	branch = main
+[submodule "LOCATION_v2"]
+	path = LOCATION_v2
+	url = https://github.com/fel0ne/LOCATION_v2.git
